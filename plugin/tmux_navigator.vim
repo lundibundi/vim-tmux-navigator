@@ -46,6 +46,10 @@ if !exists("g:tmux_navigator_disable_when_zoomed")
   let g:tmux_navigator_disable_when_zoomed = 0
 endif
 
+if !exists("g:tmux_navigator_restore_when_zoomed")
+  let g:tmux_navigator_restore_when_zoomed = 0
+endif
+
 function! s:TmuxOrTmateExecutable()
   return (match($TMUX, 'tmate') != -1 ? 'tmate' : 'tmux')
 endfunction
@@ -108,8 +112,12 @@ function! s:TmuxAwareNavigate(direction)
       catch /^Vim\%((\a\+)\)\=:E141/ " catches the no file name error
       endtry
     endif
+    let restore_zoom = s:TmuxVimPaneIsZoomed()
     let args = 'select-pane -t ' . shellescape($TMUX_PANE) . ' -' . tr(a:direction, 'phjkl', 'lLDUR')
     silent call s:TmuxCommand(args)
+    if g:tmux_navigator_restore_when_zoomed == 1 && restore_zoom
+      silent call s:TmuxCommand('resize-pane -Z')
+    endif
     if s:NeedsVitalityRedraw()
       redraw!
     endif
